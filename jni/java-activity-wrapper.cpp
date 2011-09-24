@@ -16,14 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <java-activity-wrapper.h>
+#include <dlfcn.h>
 
+#define DATA_BASE "/data/data/"
 #define TOC_FILE "/files/content/image_ps_toc.bin"
-#define ORIGINAL_LIB "/lib/libjava-activity.so"
+#define ORIGINAL_LIB "/lib/libjava-activity-orig.so"
 
 FILE *tocFile;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
-{		
+{
 	return JNI_VERSION_1_4;
 }
 
@@ -41,45 +43,74 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
 	jclass cls;
 	jmethodID get_load_id;
 	jstring libPath;
-	const char *cLibPath;
 	
 	cls = env->FindClass("java/lang/System");
 	get_load_id = env->GetStaticMethodID(cls, "load", "(Ljava/lang/String;)V");
-	libPath = getLibraryPath(env, dataDir);
+	libPath = getLibraryPath(env, packageName);
 	
 	setTocFile(env, sdDataDir);
 	
 	env->CallStaticVoidMethod(cls, get_load_id, libPath);
 	
-	cLibPath = env->GetStringUTFChars(libPath, NULL);
-	env->ReleaseStringUTFChars(libPath, cLibPath);
-	
 	cls = env->FindClass("com/sonyericsson/zsystem/jni/ZJavaActivity");
 	get_load_id = env->GetMethodID(cls, "JNI_InitializeActivity", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/content/res/AssetManager;)I");
 	
-	//__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Wrapper loaded successfully, %p", env);
+	__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Wrapper loaded successfully, %p", env);
 	return env->CallIntMethod(obj, get_load_id, dataDir, sdDataDir, packageName, assistMgr);
 }
 
-jstring getLibraryPath(JNIEnv *env, jstring dataDir)
+JNIEXPORT jint JNICALL Java_com_sony_android_psone_CommonFunctions_a // verifyLicense
+  (JNIEnv *env, jclass cls1, jint int1, jstring deviceStr, jstring signature, jlong long1, jstring packageName, jstring str4, jstring str5, jint int2)
+{
+	return Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLicense(env, cls1, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
+}
+
+JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLicense
+  (JNIEnv *env, jclass cls1, jint int1, jstring deviceStr, jstring signature, jlong long1, jstring packageName, jstring str4, jstring str5, jint int2)
+{
+	jclass cls;
+	jmethodID get_load_id;
+	jstring dataDirBase;
+	jstring libPath;
+	const char *methodSig;
+	
+	cls = env->FindClass("java/lang/System");
+	get_load_id = env->GetStaticMethodID(cls, "load", "(Ljava/lang/String;)V");
+	libPath = getLibraryPath(env, packageName);
+	
+	env->CallStaticVoidMethod(cls, get_load_id, libPath);
+	
+	methodSig = "(ILjava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)I";
+	get_load_id = env->GetStaticMethodID(cls1, "verifyLicense", methodSig);
+	if(env->ExceptionCheck() || !get_load_id){
+		env->ExceptionClear();
+		get_load_id = env->GetStaticMethodID(cls1, "a", methodSig);
+	}
+	
+	return env->CallStaticIntMethod(cls1, get_load_id, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
+}
+
+jstring getLibraryPath(JNIEnv *env, jstring packageName)
 {
 	jclass stringClass;
 	jmethodID cid;
+	jstring dataDirBase;
 	jobject libPath;
 	jstring libName;
-
+	
+	dataDirBase = env->NewStringUTF(DATA_BASE);
 	libName = env->NewStringUTF(ORIGINAL_LIB);
-
 	stringClass = env->FindClass("java/lang/String");
 	if (stringClass == NULL)
 		return NULL;
 	cid = env->GetMethodID(stringClass, "<init>", "(Ljava/lang/String;)V");
 	if (cid == NULL)
 		return NULL;
-	libPath = env->NewObject(stringClass, cid, dataDir);
+	libPath = env->NewObject(stringClass, cid, dataDirBase);
 	cid = env->GetMethodID(stringClass, "concat", "(Ljava/lang/String;)Ljava/lang/String;");
 	if (cid == NULL)
 		return NULL;
+	libPath = env->CallObjectMethod(libPath, cid, packageName);
 	libPath = env->CallObjectMethod(libPath, cid, libName);
 
 	return (jstring)libPath;
@@ -96,6 +127,7 @@ int setTocFile(JNIEnv *env, jstring sdDataDir)
 	strcpy(path, cSdDataPath);
 	strcat(path, tocLoc);
 	tocFile = fopen(path, "rb");
+	env->ReleaseStringUTFChars(sdDataDir, cSdDataPath);
 	if(!tocFile)
 		return 1;
 	return 0;

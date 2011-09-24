@@ -1,0 +1,1 @@
+To use, just add the lib to the PSX emulator /data/data/{id}/libs and modify it's AndroidManifest.xml to call it.
