@@ -1,1 +1,12 @@
-To use, just add the lib to the PSX emulator /data/data/{id}/libs and modify it's AndroidManifest.xml to call it.
+PSXperia Emulator Injection
+2.0 Beta
+By Yifan Lu (http://yifan.lu/)
+========================================
+
+If you are looking for the tool that converts your PSX games to be playable on your Xperia Play, this is not it. Check out: http://github.com/yifanlu/PSXperia
+
+This is the actual method used to inject PSX games into the native emulator found on the Xperia Play. PSXPeria Tool (link above) uses this code to generate your games.
+
+There are two parts of the emulator injector, the first of which is libjava-activity-wrapper.so. This is a wrapper library for Sony's "libjava-activity.so" and when the wrapper is loaded instead by Android, function calls to get the table of contents for the compressed game image is redirected to itself where it loads from a file. (The original library decrypts the TOC from within itself and loads it.)
+
+The second part is libjava-activity-patch.so. This is written in ARM assembly and is used by PSXPeria Tool to patch function calls in newer versions of the emulator to use libjava-activity-wrapper.so (in older versions, this was done automatically). You need to take the assembled functions and replace the functions in the "libjava-activity.so" binary with them (and change the offsets accordantly). Currently, there is no simple way of finding the correct offsets for functions and data, so after assembling, you need to manually change the machine code to use the correct offsets (PSXPeria Tool does this with a pre-defined set of patches).

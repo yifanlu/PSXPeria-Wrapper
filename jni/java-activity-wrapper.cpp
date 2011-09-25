@@ -16,11 +16,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <java-activity-wrapper.h>
-#include <dlfcn.h>
+//#include <android/log.h>
 
 #define DATA_BASE "/data/data/"
 #define TOC_FILE "/files/content/image_ps_toc.bin"
-#define ORIGINAL_LIB "/lib/libjava-activity-orig.so"
+#define ORIGINAL_LIB "/lib/libjava-activity.so"
 
 FILE *tocFile;
 
@@ -39,7 +39,7 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)
 
 JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1InitializeActivity
   (JNIEnv *env, jobject obj, jstring dataDir, jstring sdDataDir, jstring packageName, jobject assistMgr)
-{
+{	
 	jclass cls;
 	jmethodID get_load_id;
 	jstring libPath;
@@ -48,6 +48,12 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
 	get_load_id = env->GetStaticMethodID(cls, "load", "(Ljava/lang/String;)V");
 	libPath = getLibraryPath(env, packageName);
 	
+	/*
+	const char *nativeString = env->GetStringUTFChars(libPath, NULL);
+	__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Lib path, %s", nativeString);
+	env->ReleaseStringUTFChars(libPath, nativeString);
+	*/
+	
 	setTocFile(env, sdDataDir);
 	
 	env->CallStaticVoidMethod(cls, get_load_id, libPath);
@@ -55,7 +61,7 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
 	cls = env->FindClass("com/sonyericsson/zsystem/jni/ZJavaActivity");
 	get_load_id = env->GetMethodID(cls, "JNI_InitializeActivity", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/content/res/AssetManager;)I");
 	
-	__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Wrapper loaded successfully, %p", env);
+	//__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Wrapper loaded successfully, %p", env);
 	return env->CallIntMethod(obj, get_load_id, dataDir, sdDataDir, packageName, assistMgr);
 }
 
@@ -77,6 +83,12 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLic
 	cls = env->FindClass("java/lang/System");
 	get_load_id = env->GetStaticMethodID(cls, "load", "(Ljava/lang/String;)V");
 	libPath = getLibraryPath(env, packageName);
+	
+	/*
+	const char *nativeString = env->GetStringUTFChars(libPath, NULL);
+	__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Lib path, %s", nativeString);
+	env->ReleaseStringUTFChars(libPath, nativeString);
+	*/
 	
 	env->CallStaticVoidMethod(cls, get_load_id, libPath);
 	

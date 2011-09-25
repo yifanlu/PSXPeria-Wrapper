@@ -14,10 +14,21 @@
 #
 LOCAL_PATH := $(call my-dir)
 
+# Build wrapper library
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := java-activity-wrapper
 LOCAL_SRC_FILES := java-activity-wrapper.cpp
 #LOCAL_LDLIBS    := -llog
+
+include $(BUILD_SHARED_LIBRARY)
+
+# Build function patches to call wrapper library
+# TODO: Automate patching offsets
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := java-activity-patch
+LOCAL_SRC_FILES := java-activity-patch.S
+LOCAL_LDLIBS    := -ldl
 
 include $(BUILD_SHARED_LIBRARY)
