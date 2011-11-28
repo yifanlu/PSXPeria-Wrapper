@@ -15,12 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 #include <java-activity-wrapper.h>
 //#include <android/log.h>
 
 #define DATA_BASE "/data/data/"
 #define TOC_FILE "/files/content/image_ps_toc.bin"
-#define ORIGINAL_LIB "/lib/libjava-activity.so"
+#define ORIGINAL_LIB "/lib/libjava-activity-patched.so"
 
 FILE *tocFile;
 
@@ -40,6 +41,18 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)
 JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1InitializeActivity
   (JNIEnv *env, jobject obj, jstring dataDir, jstring sdDataDir, jstring packageName, jobject assistMgr)
 {	
+	return JNI_InitializeActivity("com/sonyericsson/zsystem/jni/ZJavaActivity", "JNI_InitializeActivity", env, obj, dataDir, sdDataDir, packageName, assistMgr);
+}
+
+JNIEXPORT jint JNICALL Java_com_sce_zsystem_jni_ZPlatformActivity_JNI_1InitializeActivity
+  (JNIEnv *env, jobject obj, jstring dataDir, jstring sdDataDir, jstring packageName, jobject assistMgr)
+{
+	return JNI_InitializeActivity("com/sce/zsystem/jni/ZPlatformActivity", "JNI_InitializeActivity", env, obj, dataDir, sdDataDir, packageName, assistMgr);
+}
+
+JNIEXPORT jint JNICALL JNI_InitializeActivity
+  (const char *className, const char *methodName, JNIEnv *env, jobject obj, jstring dataDir, jstring sdDataDir, jstring packageName, jobject assistMgr)
+{	
 	jclass cls;
 	jmethodID get_load_id;
 	jstring libPath;
@@ -54,12 +67,14 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
 	env->ReleaseStringUTFChars(libPath, nativeString);
 	*/
 	
+	//__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "%s", "We are init-ing the emulator.");
+	
 	setTocFile(env, sdDataDir);
 	
 	env->CallStaticVoidMethod(cls, get_load_id, libPath);
 	
-	cls = env->FindClass("com/sonyericsson/zsystem/jni/ZJavaActivity");
-	get_load_id = env->GetMethodID(cls, "JNI_InitializeActivity", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/content/res/AssetManager;)I");
+	cls = env->FindClass(className);
+	get_load_id = env->GetMethodID(cls, methodName, "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/content/res/AssetManager;)I");
 	
 	//__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "Wrapper loaded successfully, %p", env);
 	return env->CallIntMethod(obj, get_load_id, dataDir, sdDataDir, packageName, assistMgr);
@@ -68,17 +83,22 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
 JNIEXPORT jint JNICALL Java_com_sony_android_psone_CommonFunctions_a // verifyLicense
   (JNIEnv *env, jclass cls1, jint int1, jstring deviceStr, jstring signature, jlong long1, jstring packageName, jstring str4, jstring str5, jint int2)
 {
-	return Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLicense(env, cls1, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
+	return verifyLicense("a", env, cls1, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
 }
 
 JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLicense
   (JNIEnv *env, jclass cls1, jint int1, jstring deviceStr, jstring signature, jlong long1, jstring packageName, jstring str4, jstring str5, jint int2)
 {
+	return verifyLicense("verifyLicense", env, cls1, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
+}
+
+JNIEXPORT jint JNICALL verifyLicense
+  (const char *methodName, JNIEnv *env, jclass cls1, jint int1, jstring deviceStr, jstring signature, jlong long1, jstring packageName, jstring str4, jstring str5, jint int2)
+{
 	jclass cls;
 	jmethodID get_load_id;
 	jstring dataDirBase;
 	jstring libPath;
-	const char *methodSig;
 	
 	cls = env->FindClass("java/lang/System");
 	get_load_id = env->GetStaticMethodID(cls, "load", "(Ljava/lang/String;)V");
@@ -90,14 +110,11 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLic
 	env->ReleaseStringUTFChars(libPath, nativeString);
 	*/
 	
+	//__android_log_print(ANDROID_LOG_DEBUG, "PSEmulatorWrapper", "%s", "We are verifying the license.");
+	
 	env->CallStaticVoidMethod(cls, get_load_id, libPath);
 	
-	methodSig = "(ILjava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)I";
-	get_load_id = env->GetStaticMethodID(cls1, "verifyLicense", methodSig);
-	if(env->ExceptionCheck() || !get_load_id){
-		env->ExceptionClear();
-		get_load_id = env->GetStaticMethodID(cls1, "a", methodSig);
-	}
+	get_load_id = env->GetStaticMethodID(cls1, methodName, "(ILjava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)I");
 	
 	return env->CallStaticIntMethod(cls1, get_load_id, int1, deviceStr, signature, long1, packageName, str4, str5, int2);
 }
@@ -145,33 +162,17 @@ int setTocFile(JNIEnv *env, jstring sdDataDir)
 	return 0;
 }
 
-/*
-INCOMPLETE, NOT NEEDED ANYMORE
-void overwriteTocFunctions(const char *libPath)
-{	
-	int (*PsCrypt_GetImageToc)(void*) = NULL;
-	int (*PsCrypt_GetImageTocLength)() = NULL;
-	void *handle;
-	void *tocPtr;
-	int length;
-	
-	//handle = dlopen(libPath, RTLD_LAZY);
-	*(void **)(&PsCrypt_GetImageToc) = dlsym((void*)0xFFFFFFFF, "PsCrypt_GetImageToc");
-	*(void **)(&PsCrypt_GetImageTocLength) = dlsym((void*)0xFFFFFFFF, "PsCrypt_GetImageTocLength");
-}
-*/
-
 int PsCrypt_GetImageToc(void* dest)
 {
 	if(!tocFile)
-		return 0;
+		return -1;
 	return fread(dest, sizeof(char), PsCrypt_GetImageTocLength(), tocFile);
 }
 
 int PsCrypt_GetImageTocLength()
 {
 	if(!tocFile)
-		return 0;
+		return -1;
 	int filesize;
 	fseek(tocFile, 0L, SEEK_END);
 	filesize = ftell(tocFile);

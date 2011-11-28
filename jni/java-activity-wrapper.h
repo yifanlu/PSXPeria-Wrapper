@@ -17,6 +17,17 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_JNI_1Init
   (JNIEnv *, jobject, jstring, jstring, jstring, jobject);
 
 /*
+ * Class:     com_sce_zsystem_jni_ZPlatformActivity
+ * Method:    JNI_InitializeActivity
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/content/res/AssetManager;)I
+ */
+JNIEXPORT jint JNICALL Java_com_sce_zsystem_jni_ZPlatformActivity_JNI_1InitializeActivity
+  (JNIEnv *, jobject, jstring, jstring, jstring, jobject);
+
+JNIEXPORT jint JNICALL JNI_InitializeActivity
+  (const char *, const char *, JNIEnv *, jobject, jstring, jstring, jstring, jobject);
+
+/*
  * Class:     com_sonyericsson_zsystem_jni_ZJavaActivity
  * Method:    verifyLicense
  * Signature: (ILjava/lang/String;Ljava/lang/String;JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;I)I
@@ -31,6 +42,9 @@ JNIEXPORT jint JNICALL Java_com_sonyericsson_zsystem_jni_ZJavaActivity_verifyLic
 */
 JNIEXPORT jint JNICALL Java_com_sony_android_psone_CommonFunctions_a
   (JNIEnv *, jclass, jint, jstring, jstring, jlong, jstring, jstring, jstring, jint);
+
+JNIEXPORT jint JNICALL verifyLicense
+  (const char *, JNIEnv *, jclass, jint, jstring, jstring, jlong, jstring, jstring, jstring, jint);
 
 jstring getLibraryPath(JNIEnv *, jstring);
 
